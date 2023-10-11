@@ -3,7 +3,7 @@
 cv::Mat cuda_canny_input_image, cuda_canny_output_image;
 cv::String cuda_canny_input_file, cuda_canny_output_file;
 
-StopWatchInterface *cannyCudaTimer = nullptr;
+StopWatchInterface *canny_cuda_timer = nullptr;
 
 cudaStream_t stream;
 uint8_t *input_pixels = nullptr, *output_pixels = nullptr, *segment_pixels = nullptr, *final_result = nullptr;
@@ -164,13 +164,13 @@ __global__ void edgeHysteresis(uint8_t* out, uint8_t* in, int image_width, int i
 	}
 }
 
-void cuda_canny_mem_alloc(void** devPtr, size_t size)
+void cuda_canny_mem_alloc(void** dev_ptr, size_t size)
 {
-    cudaError_t result = cudaMalloc(devPtr, size);
+    cudaError_t result = cudaMalloc(dev_ptr, size);
     if (result != cudaSuccess)
     {
-        std::cerr << std::endl << "Failed to allocate memory to " << devPtr << " : " << cudaGetErrorString(result) << " ... Exiting !!!" << std::endl;
-        cannyCleanup();
+        std::cerr << std::endl << "Failed to allocate memory to " << dev_ptr << " : " << cudaGetErrorString(result) << " ... Exiting !!!" << std::endl;
+        canny_cuda_cleanup();
         exit(EXIT_FAILURE);
     }
 }
@@ -181,22 +181,21 @@ void cuda_canny_mem_copy(void *dst, const void *src, size_t count, cudaMemcpyKin
     if (result != cudaSuccess)
     {
         std::cerr << std::endl << "Failed to copy memory from " << src << " to " << dst << " : " << cudaGetErrorString(result) << " ... Exiting !!!" << std::endl;
-        cannyCleanup();
+        canny_cuda_cleanup();
         exit(EXIT_FAILURE);
     }
 }
 
-void cuda_canny_mem_free(void* devPtr)
+void cuda_canny_mem_free(void* dev_ptr)
 {
-    if (devPtr)
+    if (dev_ptr)
     {
-        cudaFree(devPtr);
-        devPtr = nullptr;
+        cudaFree(dev_ptr);
+        dev_ptr = nullptr;
     }
 }
 
-
-void runCannyOperator(uint8_t *input_image_data, uint8_t *output_image_data, int image_width, int image_height)
+void run_canny_operator(uint8_t *input_image_data, uint8_t *output_image_data, int image_width, int image_height)
 {
     // Variable Declarations
 	const double gaussian_kernel[9] = 
@@ -237,10 +236,10 @@ void runCannyOperator(uint8_t *input_image_data, uint8_t *output_image_data, int
 	cuda_canny_mem_copy(sobel_kernel_x_gpu, sobel_kernel_x, sizeof(int8_t) * KERNEL_SIZE * KERNEL_SIZE, cudaMemcpyHostToDevice);
 	cuda_canny_mem_copy(sobel_kernel_y_gpu, sobel_kernel_y, sizeof(int8_t) * KERNEL_SIZE * KERNEL_SIZE, cudaMemcpyHostToDevice);
 
-    sdkCreateTimer(&cannyCudaTimer);
+    sdkCreateTimer(&canny_cuda_timer);
 	cudaStreamCreate(&stream);
 
-    sdkStartTimer(&cannyCudaTimer);
+    sdkStartTimer(&canny_cuda_timer);
 	gaussianBlur<<<NUM_BLOCKS, THREADS_PER_BLOCK, GRID, stream>>>(input_pixels, output_pixels, image_width, image_height, gaussian_kernel_gpu);
     sobelFilter<<<NUM_BLOCKS, THREADS_PER_BLOCK, GRID, stream>>>(gradient_pixels, segment_pixels, output_pixels, image_width, image_height, sobel_kernel_x_gpu, sobel_kernel_y_gpu);
     cuda_canny_mem_copy(max_pixels, gradient_pixels, image_height * image_width * sizeof(double), cudaMemcpyDeviceToDevice);
@@ -248,57 +247,32 @@ void runCannyOperator(uint8_t *input_image_data, uint8_t *output_image_data, int
 	doubleThreshold<<<NUM_BLOCKS, THREADS_PER_BLOCK, GRID, stream>>>(output_pixels, max_pixels, CUDA_THRESHOLD * 3, CUDA_THRESHOLD, image_width, image_height);
 	cuda_canny_mem_copy(final_result, output_pixels, image_height * image_width * sizeof(uint8_t), cudaMemcpyDeviceToDevice);
 	edgeHysteresis<<<NUM_BLOCKS, THREADS_PER_BLOCK, GRID, stream>>>(final_result, output_pixels, image_width, image_height);
-    sdkStopTimer(&cannyCudaTimer);
+    sdkStopTimer(&canny_cuda_timer);
 
 	cuda_canny_mem_copy(output_image_data, final_result, image_width * image_height * sizeof(uint8_t), cudaMemcpyDeviceToHost);
 }
 
-void cannyCUDA(int image_number)
+void canny_cuda(string input_file)
 {
-    switch(image_number)
-    {
-        case 1:
-            cuda_canny_input_file = "Images\\Input\\img1.jpg";
-            cuda_canny_output_file = "Images\\Output\\Canny-CUDA-1.jpg";
-        break;
-        case 2:
-            cuda_canny_input_file = "Images\\Input\\img2.jpg";
-            cuda_canny_output_file = "Images\\Output\\Canny-CUDA-2.jpg";
-        break;
-        case 3:
-            cuda_canny_input_file = "Images\\Input\\img3.jpg";
-            cuda_canny_output_file = "Images\\Output\\Canny-CUDA-3.jpg";
-        break;
-        case 4:
-            cuda_canny_input_file = "Images\\Input\\img4.jpg";
-            cuda_canny_output_file = "Images\\Output\\Canny-CUDA-4.jpg";
-        break;
-        case 5:
-            cuda_canny_input_file = "Images\\Input\\img5.jpg";
-            cuda_canny_output_file = "Images\\Output\\Canny-CUDA-5.jpg";
-        break;
-        default:
-            std::cerr << std::endl << "Error ... Please Enter Valid Number ... Exiting !!!" << std::endl;
-            cannyCleanup();
-            exit(EXIT_FAILURE);
-        break;
-    }
+    cuda_canny_input_file = input_file;
+    string output_file_name = filesystem::path(input_file).filename();
+    cuda_canny_output_file = "./images/output/Canny_CUDA_" + output_file_name;
 
     cuda_canny_input_image = cv::imread(cuda_canny_input_file, cv::IMREAD_GRAYSCALE);
     cuda_canny_output_image = cuda_canny_input_image.clone();
 
-    runCannyOperator(cuda_canny_input_image.data, cuda_canny_output_image.data, cuda_canny_input_image.cols, cuda_canny_input_image.rows);
+    run_canny_operator(cuda_canny_input_image.data, cuda_canny_output_image.data, cuda_canny_input_image.cols, cuda_canny_input_image.rows);
 
-    std::cout << std::endl << "Time for Canny Operator using CUDA (GPU) : " << sdkGetTimerValue(&cannyCudaTimer) << " ms" << std::endl;
+    std::cout << std::endl << "Time for Canny Operator using CUDA (GPU) : " << sdkGetTimerValue(&canny_cuda_timer) << " ms" << std::endl;
 
     cuda_canny_output_image.convertTo(cuda_canny_output_image, CV_8UC1);
 
     cv::imwrite(cuda_canny_output_file, cuda_canny_output_image);
 
-    cannyCleanup();
+    canny_cuda_cleanup();
 }
 
-void cannyCleanup(void)
+void canny_cuda_cleanup(void)
 {
 	cuda_canny_mem_free(final_result);
     cuda_canny_mem_free(sobel_kernel_y_gpu);
@@ -315,10 +289,10 @@ void cannyCleanup(void)
         cudaStreamDestroy(stream);
     }
 
-    if (cannyCudaTimer)
+    if (canny_cuda_timer)
     {
-        sdkDeleteTimer(&cannyCudaTimer);
-        cannyCudaTimer = nullptr;
+        sdkDeleteTimer(&canny_cuda_timer);
+        canny_cuda_timer = nullptr;
     }
 
     cuda_canny_output_image.release();

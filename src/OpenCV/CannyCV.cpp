@@ -2,61 +2,36 @@
 
 cv::Mat input_image, output_image;
 cv::String canny_cv_input_file, canny_cv_output_file;
-StopWatchInterface *cannyCVTimer = nullptr;
+StopWatchInterface *canny_cv_timer = nullptr;
 
-void cannyCV(int image_number)
+void canny_cv(string input_file)
 {
-    switch(image_number)
-    {
-        case 1:
-            canny_cv_input_file = "Images\\Input\\img1.jpg";
-            canny_cv_output_file = "Images\\Output\\Canny-CV-1.jpg";
-        break;
-        case 2:
-            canny_cv_input_file = "Images\\Input\\img2.jpg";
-            canny_cv_output_file = "Images\\Output\\Canny-CV-2.jpg";
-        break;
-        case 3:
-            canny_cv_input_file = "Images\\Input\\img3.jpg";
-            canny_cv_output_file = "Images\\Output\\Canny-CV-3.jpg";
-        break;
-        case 4:
-            canny_cv_input_file = "Images\\Input\\img4.jpg";
-            canny_cv_output_file = "Images\\Output\\Canny-CV-4.jpg";
-        break;
-        case 5:
-            canny_cv_input_file = "Images\\Input\\img5.jpg";
-            canny_cv_output_file = "Images\\Output\\Canny-CV-5.jpg";
-        break;
-        default:
-            std::cerr << std::endl << "Error ... Please Enter Valid Number ... Exiting !!!" << std::endl;
-            cvSobelCleanup();
-            exit(EXIT_FAILURE);
-        break;
-    }
-
-    sdkCreateTimer(&cannyCVTimer);
+    sdkCreateTimer(&canny_cv_timer);
     
+    canny_cv_input_file = input_file;
+    string output_file_name = filesystem::path(input_file).filename();
+    canny_cv_output_file = "./images/output/Canny_OpenCV_" + output_file_name;
+
     input_image = cv::imread(canny_cv_input_file, cv::IMREAD_GRAYSCALE);
 
-    sdkStartTimer(&cannyCVTimer);
+    sdkStartTimer(&canny_cv_timer);
     cv::GaussianBlur(input_image, output_image, cv::Size(3, 3), 0);
     cv::Canny(output_image, output_image, THRESHOLD, THRESHOLD * RATIO, 3);
-    sdkStopTimer(&cannyCVTimer);
+    sdkStopTimer(&canny_cv_timer);
 
-    std::cout << std::endl << "Time for Canny Operator using OpenCV (CPU) : " << sdkGetTimerValue(&cannyCVTimer) << " ms" << std::endl;
+    std::cout << std::endl << "Time for Canny Operator using OpenCV (CPU) : " << sdkGetTimerValue(&canny_cv_timer) << " ms" << std::endl;
 
     cv::imwrite(canny_cv_output_file, output_image);
 
-    cvSobelCleanup();
+    canny_cv_cleanup();
 }
 
-void cvSobelCleanup(void)
+void canny_cv_cleanup(void)
 {
-    if (cannyCVTimer)
+    if (canny_cv_timer)
     {
-        sdkDeleteTimer(&cannyCVTimer);
-        cannyCVTimer = nullptr;
+        sdkDeleteTimer(&canny_cv_timer);
+        canny_cv_timer = nullptr;
     }
 
     output_image.release();

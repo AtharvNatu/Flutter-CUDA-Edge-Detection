@@ -2,9 +2,9 @@
 
 cv::Mat cuda_sobel_input_image, cuda_sobel_output_image;
 cv::String cuda_sobel_input_file, cuda_sobel_output_file;
-StopWatchInterface *sobelCudaTimer = nullptr;
-unsigned char *deviceInput = nullptr, *deviceOutput = nullptr;
-float *hostKernel = nullptr, *deviceKernel = nullptr;
+StopWatchInterface *sobel_cuda_timer = nullptr;
+unsigned char *device_input = nullptr, *device_output = nullptr;
+float *host_kernel = nullptr, *device_kernel = nullptr;
 
 __global__ void gaussianBlurKernel(unsigned char *cuda_sobel_input_image, unsigned char *cuda_sobel_output_image, int width, int height, float *kernel)
 {
@@ -13,26 +13,26 @@ __global__ void gaussianBlurKernel(unsigned char *cuda_sobel_input_image, unsign
 
     if (x < width && y < height)
     {
-        float blurPixel = 0.0f;
-        int kernelRadius = GAUSSIAN_KERNEL_SIZE / 2;
+        float blur_pixel = 0.0f;
+        int kernel_radius = GAUSSIAN_KERNEL_SIZE / 2;
 
-        for (int i = -kernelRadius; i <= kernelRadius; i++)
+        for (int i = -kernel_radius; i <= kernel_radius; i++)
         {
-            for (int j = -kernelRadius; j <= kernelRadius; j++)
+            for (int j = -kernel_radius; j <= kernel_radius; j++)
             {
-                int xOffset = x + i;
-                int yOffset = y + j;
+                int x_offset = x + i;
+                int y_offset = y + j;
 
-                if (xOffset >= 0 && xOffset < width && yOffset >= 0 && yOffset < height)
+                if (x_offset >= 0 && x_offset < width && y_offset >= 0 && y_offset < height)
                 {
-                    int inputIndex = yOffset * width + xOffset;
-                    int kernelIndex = (i + kernelRadius) * GAUSSIAN_KERNEL_SIZE + (j + kernelRadius);
-                    blurPixel = blurPixel + static_cast<float>(cuda_sobel_input_image[inputIndex]) * kernel[kernelIndex];
+                    int input_index = y_offset * width + x_offset;
+                    int kernel_index = (i + kernel_radius) * GAUSSIAN_KERNEL_SIZE + (j + kernel_radius);
+                    blur_pixel = blur_pixel + static_cast<float>(cuda_sobel_input_image[input_index]) * kernel[kernel_index];
                 }
             }
         }
 
-        cuda_sobel_output_image[y * width + x] = static_cast<unsigned char>(blurPixel);
+        cuda_sobel_output_image[y * width + x] = static_cast<unsigned char>(blur_pixel);
     }
 }
 
@@ -79,13 +79,13 @@ __global__ void sobelFilterKernel(unsigned char *cuda_sobel_input_image, unsigne
     }
 }
 
-void cuda_sobel_mem_alloc(void** devPtr, size_t size)
+void cuda_sobel_mem_alloc(void** dev_ptr, size_t size)
 {
-    cudaError_t result = cudaMalloc(devPtr, size);
+    cudaError_t result = cudaMalloc(dev_ptr, size);
     if (result != cudaSuccess)
     {
-        std::cerr << std::endl << "Failed to allocate memory to " << devPtr << " : " << cudaGetErrorString(result) << " ... Exiting !!!" << std::endl;
-        sobelCleanup();
+        std::cerr << std::endl << "Failed to allocate memory to " << dev_ptr << " : " << cudaGetErrorString(result) << " ... Exiting !!!" << std::endl;
+        sobel_cuda_cleanup();
         exit(EXIT_FAILURE);
     }
 }
@@ -96,179 +96,107 @@ void cuda_sobel_mem_copy(void *dst, const void *src, size_t count, cudaMemcpyKin
     if (result != cudaSuccess)
     {
         std::cerr << std::endl << "Failed to copy memory from " << src << " to " << dst << " : " << cudaGetErrorString(result) << " ... Exiting !!!" << std::endl;
-        sobelCleanup();
+        sobel_cuda_cleanup();
         exit(EXIT_FAILURE);
     }
 }
 
-void cuda_sobel_mem_free(void* devPtr)
+void cuda_sobel_mem_free(void* dev_ptr)
 {
-    if (devPtr)
+    if (dev_ptr)
     {
-        cudaFree(devPtr);
-        devPtr = nullptr;
+        cudaFree(dev_ptr);
+        dev_ptr = nullptr;
     }
 }
 
-void runSobelOperator(cv::Mat *inputImage, cv::Mat *outputImage)
+void run_sobel_operator(cv::Mat *input_image, cv::Mat *output_image)
 {
     // Variable Declarations
     cudaError_t result;
-    float kernelSum = 0.0f;
+    float kernel_sum = 0.0f;
     float sigma = 1.0f;
 
-    int imageWidth = inputImage->cols;
-    int imageHeight = inputImage->rows;
-    int imageSize = imageHeight * imageWidth * sizeof(unsigned char);
+    int image_width = input_image->cols;
+    int image_height = input_image->rows;
+    int image_size = image_height * image_width * sizeof(unsigned char);
     
     // Create Gaussian Kernel
-    hostKernel = new float[GAUSSIAN_KERNEL_SIZE * GAUSSIAN_KERNEL_SIZE];
-    int kernelRadius = GAUSSIAN_KERNEL_SIZE / 2;
+    host_kernel = new float[GAUSSIAN_KERNEL_SIZE * GAUSSIAN_KERNEL_SIZE];
+    int kernel_radius = GAUSSIAN_KERNEL_SIZE / 2;
 
-    for (int i = -kernelRadius; i <= kernelRadius; i++) 
+    for (int i = -kernel_radius; i <= kernel_radius; i++) 
     {
-        for (int j = -kernelRadius; j <= kernelRadius; j++)
+        for (int j = -kernel_radius; j <= kernel_radius; j++)
         {
-            int index = (i + kernelRadius) * kernelRadius + (j + kernelRadius);
-            hostKernel[index] = exp(-(i * i + j + j) / (2.0f * sigma * sigma));
-            kernelSum = kernelSum + hostKernel[index];
+            int index = (i + kernel_radius) * kernel_radius + (j + kernel_radius);
+            host_kernel[index] = exp(-(i * i + j + j) / (2.0f * sigma * sigma));
+            kernel_sum = kernel_sum + host_kernel[index];
         }
     }
 
     for (int i = 0; i < GAUSSIAN_KERNEL_SIZE * GAUSSIAN_KERNEL_SIZE; i++)
     {
-        hostKernel[i] = hostKernel[i] / kernelSum;
+        host_kernel[i] = host_kernel[i] / kernel_sum;
     }
 
-    sdkCreateTimer(&sobelCudaTimer);
+    sdkCreateTimer(&sobel_cuda_timer);
 
-    result = cudaMalloc((void **)&deviceInput, imageSize);
-    if (result != cudaSuccess)
-    {
-        std::cerr << std::endl << "cudaMalloc() Failed For Input Image ... Exiting !!!" << std::endl;
-        exit(EXIT_FAILURE);
-    }
-
-    result = cudaMalloc((void **)&deviceOutput, imageSize);
-    if (result != cudaSuccess)
-    {
-        std::cerr << std::endl << "cudaMalloc() Failed For Output Image ... Exiting !!!" << std::endl;
-        exit(EXIT_FAILURE);
-    }
-
-    result = cudaMalloc((void **)&deviceKernel, GAUSSIAN_KERNEL_SIZE * GAUSSIAN_KERNEL_SIZE * sizeof(float));
-    if (result != cudaSuccess)
-    {
-        std::cerr << std::endl << "cudaMalloc() Failed For Device Kernel ... Exiting !!!" << std::endl;
-        exit(EXIT_FAILURE);
-    }
-
-    result = cudaMemcpy(deviceInput, inputImage->data, imageSize, cudaMemcpyHostToDevice);
-    if (result != cudaSuccess)
-    {
-        std::cerr << std::endl << "cudaMemcpy() Failed For Input Image ... Exiting !!!" << std::endl;
-        exit(EXIT_FAILURE);
-    }
-
-    result = cudaMemcpy(deviceKernel, hostKernel, GAUSSIAN_KERNEL_SIZE * GAUSSIAN_KERNEL_SIZE * sizeof(float), cudaMemcpyHostToDevice);
-    if (result != cudaSuccess)
-    {
-        std::cerr << std::endl << "cudaMemcpy() Failed For Device Kernel ... Exiting !!!" << std::endl;
-        exit(EXIT_FAILURE);
-    }
+    cuda_sobel_mem_alloc((void **)&device_input, image_size);
+    cuda_sobel_mem_alloc((void **)&device_output, image_size);
+    cuda_sobel_mem_alloc((void **)&device_kernel, GAUSSIAN_KERNEL_SIZE * GAUSSIAN_KERNEL_SIZE * sizeof(float));
+    
+    cuda_sobel_mem_copy(device_input, input_image->data, image_size, cudaMemcpyHostToDevice);
+    cuda_sobel_mem_copy(device_kernel, host_kernel, GAUSSIAN_KERNEL_SIZE * GAUSSIAN_KERNEL_SIZE * sizeof(float), cudaMemcpyHostToDevice);
 
     // Kernel Configuration
     dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
-    dim3 dimGrid(imageHeight, imageWidth);
+    dim3 dimGrid(image_height, image_width);
 
-    sdkStartTimer(&sobelCudaTimer);
-    gaussianBlurKernel<<<dimGrid, dimBlock>>>(deviceInput, deviceOutput, imageWidth, imageHeight, deviceKernel);
-    sobelFilterKernel<<<dimGrid, dimBlock>>>(deviceInput, deviceOutput, inputImage->cols, inputImage->rows);
-    sdkStopTimer(&sobelCudaTimer);
+    sdkStartTimer(&sobel_cuda_timer);
+    gaussianBlurKernel<<<dimGrid, dimBlock>>>(device_input, device_output, image_width, image_height, device_kernel);
+    sobelFilterKernel<<<dimGrid, dimBlock>>>(device_input, device_output, input_image->cols, input_image->rows);
+    sdkStopTimer(&sobel_cuda_timer);
 
-    result = cudaMemcpy(outputImage->data, deviceOutput, imageSize, cudaMemcpyDeviceToHost);
-    if (result != cudaSuccess)
-    {
-        std::cerr << std::endl << "cudaMemcpy() Failed For Output Image ... Exiting !!!" << std::endl;
-        exit(EXIT_FAILURE);
-    }
+    cuda_sobel_mem_copy(output_image->data, device_output, image_size, cudaMemcpyDeviceToHost);
 }
 
-void sobelCUDA(int image_number)
+void sobel_cuda(string input_file)
 {
-    switch(image_number)
-    {
-        case 1:
-            cuda_sobel_input_file = "Images\\Input\\img1.jpg";
-            cuda_sobel_output_file = "Images\\Output\\Sobel-CUDA-1.jpg";
-        break;
-        case 2:
-            cuda_sobel_input_file = "Images\\Input\\img2.jpg";
-            cuda_sobel_output_file = "Images\\Output\\Sobel-CUDA-2.jpg";
-        break;
-        case 3:
-            cuda_sobel_input_file = "Images\\Input\\img3.jpg";
-            cuda_sobel_output_file = "Images\\Output\\Sobel-CUDA-3.jpg";
-        break;
-        case 4:
-            cuda_sobel_input_file = "Images\\Input\\img4.jpg";
-            cuda_sobel_output_file = "Images\\Output\\Sobel-CUDA-4.jpg";
-        break;
-        case 5:
-            cuda_sobel_input_file = "Images\\Input\\img5.jpg";
-            cuda_sobel_output_file = "Images\\Output\\Sobel-CUDA-5.jpg";
-        break;
-        default:
-            std::cerr << std::endl << "Error ... Please Enter Valid Number ... Exiting !!!" << std::endl;
-            sobelCleanup();
-            exit(EXIT_FAILURE);
-        break;
-    }
+    cuda_sobel_input_file = input_file;
+    string output_file_name = filesystem::path(input_file).filename();
+    cuda_sobel_output_file = "./images/output/Sobel_CUDA_" + output_file_name;
 
     cuda_sobel_input_image = cv::imread(cuda_sobel_input_file, cv::IMREAD_GRAYSCALE);
     cuda_sobel_output_image = cuda_sobel_input_image.clone();
 
-    runSobelOperator(&cuda_sobel_input_image, &cuda_sobel_output_image);
+    run_sobel_operator(&cuda_sobel_input_image, &cuda_sobel_output_image);
 
-    std::cout << std::endl << "Time for Sobel Operator using CUDA (GPU) : " << sdkGetTimerValue(&sobelCudaTimer) << " ms" << std::endl;
+    std::cout << std::endl << "Time for Sobel Operator using CUDA (GPU) : " << sdkGetTimerValue(&sobel_cuda_timer) << " ms" << std::endl;
 
     cuda_sobel_output_image.convertTo(cuda_sobel_output_image, CV_8UC1);
 
     cv::imwrite(cuda_sobel_output_file, cuda_sobel_output_image);
 
-    sobelCleanup();
+    sobel_cuda_cleanup();
 }
 
-void sobelCleanup(void)
+void sobel_cuda_cleanup(void)
 {
-    if (deviceKernel)
+    cuda_sobel_mem_free(device_kernel);
+    cuda_sobel_mem_free(device_output);
+    cuda_sobel_mem_free(device_input);
+
+    if (host_kernel)
     {
-        cudaFree(deviceKernel);
-        deviceKernel = nullptr;
+        delete[] host_kernel;
+        host_kernel = nullptr;
     }
 
-    if (deviceOutput)
+    if (sobel_cuda_timer)
     {
-        cudaFree(deviceOutput);
-        deviceOutput = nullptr;
-    }
-
-    if (deviceInput)
-    {
-        cudaFree(deviceInput);
-        deviceInput = nullptr;
-    }
-
-    if (hostKernel)
-    {
-        delete[] hostKernel;
-        hostKernel = nullptr;
-    }
-
-    if (sobelCudaTimer)
-    {
-        sdkDeleteTimer(&sobelCudaTimer);
-        sobelCudaTimer = nullptr;
+        sdkDeleteTimer(&sobel_cuda_timer);
+        sobel_cuda_timer = nullptr;
     }
 
     cuda_sobel_output_image.release();

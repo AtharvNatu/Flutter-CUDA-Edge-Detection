@@ -1,7 +1,9 @@
 #pragma once
 
 #include <iostream>
+#include <filesystem>
 #include <opencv2/opencv.hpp>
+using namespace std;
 
 #ifndef HELPER_TIMER_H
 #define HELPER_TIMER_H
@@ -15,5 +17,5 @@
 #define THRESHOLD   40
 #define RATIO       3
 
-void cannyCV(int);
-void cvSobelCleanup(void);
+void canny_cv(string input_file);
+void canny_cv_cleanup(void);
