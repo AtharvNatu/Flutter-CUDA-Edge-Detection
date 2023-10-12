@@ -22,7 +22,7 @@ using namespace std;
 #define SOBEL_KERNEL_SIZE     5
 #define GAUSSIAN_KERNEL_SIZE  3
 
-void sobel_cuda(string input_file);
+double sobel_cuda(string input_file);
 void cuda_sobel_mem_alloc(void** dev_ptr, size_t size);
 void cuda_sobel_mem_copy(void *dst, const void *src, size_t count, cudaMemcpyKind kind);
 void cuda_sobel_mem_free(void* dev_ptr);

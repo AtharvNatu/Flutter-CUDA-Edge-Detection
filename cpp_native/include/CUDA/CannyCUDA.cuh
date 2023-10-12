@@ -25,7 +25,7 @@ using namespace std;
 #define GRID                  0
 #define CUDA_THRESHOLD        30
 
-void canny_cuda(string input_file);
+double canny_cuda(string input_file);
 void cuda_canny_mem_alloc(void** dev_ptr, size_t size);
 void cuda_canny_mem_copy(void *dst, const void *src, size_t count, cudaMemcpyKind kind);
 void cuda_canny_mem_free(void* dev_ptr);

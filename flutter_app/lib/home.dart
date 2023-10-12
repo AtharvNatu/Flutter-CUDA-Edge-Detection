@@ -5,15 +5,10 @@ import 'package:file_picker/file_picker.dart';
 import "dart:ui" as ui;
 
 // Typedefs
-typedef GetNativeString = Pointer<Utf8> Function();
-typedef SetNativeString = Void Function(Pointer<Utf8> str);
-typedef SetDartString = void Function(Pointer<Utf8> str);
-typedef FreeNativeString = Void Function(Pointer<Utf8> str);
-typedef FreeDartString = void Function(Pointer<Utf8> str);
+typedef DartFunction = Double Function(Pointer<Utf8> str);
+typedef NativeFunction = double Function(Pointer<Utf8> str);
 
-late void Function() init, destroy;
-late void Function(Pointer<Utf8>) setString, freeString;
-late Pointer<Utf8> Function() getString;
+late double Function(Pointer<Utf8>) sobelCV, sobelCUDA, cannyCV, cannyCUDA;
 late DynamicLibrary dynamicLib;
 
 class HomeScreen extends StatefulWidget {
@@ -41,24 +36,23 @@ class _HomeScreenState extends State<HomeScreen> {
       });
     }
 
-    runNativeCode();
+    runEdgeDetection();
   }
 
-  void runNativeCode() {
-    // Native Calls
-    init();
+  void runEdgeDetection() {
+    final imageFile = selectedFileName.toNativeUtf8();
 
-    final str = selectedFileName.toNativeUtf8();
-    setString(str);
-    calloc.free(str);
+    double time1 = sobelCV(imageFile);
+    double time2 = sobelCUDA(imageFile);
+    double time3 = cannyCV(imageFile);
+    double time4 = cannyCUDA(imageFile);
 
-    final cppString = getString();
+    print("Sobel OpenCV : $time1");
+    print("Sobel CUDA : $time2");
+    print("Canny OpenCV : $time3");
+    print("Canny CUDA : $time4");
 
-    print(cppString.toDartString());
-
-    freeString(cppString);
-
-    destroy();
+    calloc.free(imageFile);
   }
 
   @override

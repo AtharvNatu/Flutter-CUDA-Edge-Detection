@@ -28,24 +28,23 @@ void main() async {
 
     // Default Linux
     var libraryPath =
-        path.join(Directory.current.path, "lib/ffi_lib", "libString.so");
+        path.join(Directory.current.path, "lib/ffi_lib", "libEdgeDetection.so");
     if (Platform.isWindows) {
       libraryPath =
-          path.join(Directory.current.path, "lib/ffi_lib", "String.dll");
+          path.join(Directory.current.path, "lib/ffi_lib", "EdgeDetection.dll");
     }
 
     dynamicLib = DynamicLibrary.open(libraryPath);
 
-    // String Testing Functions
-    init = dynamicLib.lookupFunction<Void Function(), void Function()>('init');
-    getString = dynamicLib
-        .lookupFunction<GetNativeString, GetNativeString>('getString');
-    setString =
-        dynamicLib.lookupFunction<SetNativeString, SetDartString>('setString');
-    freeString = dynamicLib
-        .lookupFunction<FreeNativeString, FreeDartString>('freeString');
-    destroy =
-        dynamicLib.lookupFunction<Void Function(), void Function()>('destroy');
+    // Edge Detection Native Functions
+    sobelCV =
+        dynamicLib.lookupFunction<DartFunction, NativeFunction>('sobelCV');
+    sobelCUDA =
+        dynamicLib.lookupFunction<DartFunction, NativeFunction>('sobelCUDA');
+    cannyCV =
+        dynamicLib.lookupFunction<DartFunction, NativeFunction>('cannyCV');
+    cannyCUDA =
+        dynamicLib.lookupFunction<DartFunction, NativeFunction>('cannyCUDA');
 
     runApp(const MyApp());
   }

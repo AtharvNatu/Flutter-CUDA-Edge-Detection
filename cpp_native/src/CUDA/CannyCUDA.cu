@@ -252,24 +252,26 @@ void run_canny_operator(uint8_t *input_image_data, uint8_t *output_image_data, i
 	cuda_canny_mem_copy(output_image_data, final_result, image_width * image_height * sizeof(uint8_t), cudaMemcpyDeviceToHost);
 }
 
-void canny_cuda(string input_file)
+double canny_cuda(string input_file)
 {
     cuda_canny_input_file = input_file;
     string output_file_name = filesystem::path(input_file).filename();
-    cuda_canny_output_file = "./images/output/Canny_CUDA_" + output_file_name;
+    cuda_canny_output_file = "/home/atharv/Downloads/Images/Output/Canny_CUDA_" + output_file_name;
 
     cuda_canny_input_image = cv::imread(cuda_canny_input_file, cv::IMREAD_GRAYSCALE);
     cuda_canny_output_image = cuda_canny_input_image.clone();
 
     run_canny_operator(cuda_canny_input_image.data, cuda_canny_output_image.data, cuda_canny_input_image.cols, cuda_canny_input_image.rows);
 
-    std::cout << std::endl << "Time for Canny Operator using CUDA (GPU) : " << sdkGetTimerValue(&canny_cuda_timer) << " ms" << std::endl;
+    double result = sdkGetTimerValue(&canny_cuda_timer);
 
     cuda_canny_output_image.convertTo(cuda_canny_output_image, CV_8UC1);
 
     cv::imwrite(cuda_canny_output_file, cuda_canny_output_image);
 
     canny_cuda_cleanup();
+
+    return result;
 }
 
 void canny_cuda_cleanup(void)
