@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart';
+import "package:flutter/material.dart";
 import "package:window_manager/window_manager.dart";
 import "dart:ffi";
 import "package:path/path.dart" as path;
 import "dart:io";
 import "dart:ui" as ui;
-import 'home.dart';
+import "home.dart";
 
 const appName = "Edge Detection Using CUDA";
 
@@ -18,7 +18,7 @@ void main() async {
       center: true,
       backgroundColor: Colors.transparent,
       skipTaskbar: false,
-      fullScreen: false,
+      fullScreen: true,
       windowButtonVisibility: true,
     );
     windowManager.waitUntilReadyToShow(windowOptions, () async {

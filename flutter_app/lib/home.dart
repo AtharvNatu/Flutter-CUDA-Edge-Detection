@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
+import "package:flutter/material.dart";
 import "dart:ffi";
-import 'package:ffi/ffi.dart';
-import 'package:file_picker/file_picker.dart';
+import "package:ffi/ffi.dart";
+import "package:file_picker/file_picker.dart";
 import "dart:ui" as ui;
+import "results.dart";
 
 // Typedefs
 typedef DartFunction = Double Function(Pointer<Utf8> str);
@@ -34,9 +35,9 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         selectedFileName = filePickerResult.files.first.path.toString();
       });
-    }
 
-    runEdgeDetection();
+      runEdgeDetection();
+    }
   }
 
   void runEdgeDetection() {
@@ -53,6 +54,11 @@ class _HomeScreenState extends State<HomeScreen> {
     print("Canny CUDA : $time4");
 
     calloc.free(imageFile);
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const Results()),
+    );
   }
 
   @override
