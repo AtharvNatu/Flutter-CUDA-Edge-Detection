@@ -85,44 +85,11 @@ class _ResultsScreenState extends State<ResultsScreen> {
       fontSize: 15,
     );
     String text;
-    switch (value.toInt()) {
-      case 0:
-        text = "0";
-        break;
-      case 5:
-        text = "5";
-        break;
-      case 10:
-        text = "10";
-        break;
-      case 20:
-        text = "20";
-        break;
-      case 30:
-        text = "30";
-        break;
-      case 40:
-        text = "40";
-        break;
-      case 50:
-        text = "50";
-        break;
-      case 100:
-        text = "100";
-        break;
-      case 200:
-        text = "200";
-        break;
-      case 250:
-        text = "250";
-        break;
-      case 300:
-        text = "300";
-        break;
-      default:
-        return Container();
+    if (value.toInt() % 5 == 0) {
+      text = value.toInt().toString();
+    } else {
+      text = "";
     }
-
     return Text(text, style: style, textAlign: TextAlign.left);
   }
 
