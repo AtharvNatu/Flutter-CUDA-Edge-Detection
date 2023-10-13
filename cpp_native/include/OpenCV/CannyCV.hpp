@@ -17,5 +17,5 @@ using namespace std;
 #define THRESHOLD   40
 #define RATIO       3
 
-double canny_cv(string input_file);
+double canny_cv(string input_file, string output_file);
 void canny_cv_cleanup(void);

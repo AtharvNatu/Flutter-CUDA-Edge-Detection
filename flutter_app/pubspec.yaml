@@ -42,6 +42,8 @@ dependencies:
   file_picker: ^5.5.0
   ffi: ^2.1.0
   ffigen: ^9.0.1
+  fl_chart: ^0.64.0
+  filesystem_picker: ^3.1.0
 
 dev_dependencies:
   flutter_test:

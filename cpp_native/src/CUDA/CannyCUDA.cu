@@ -252,11 +252,11 @@ void run_canny_operator(uint8_t *input_image_data, uint8_t *output_image_data, i
 	cuda_canny_mem_copy(output_image_data, final_result, image_width * image_height * sizeof(uint8_t), cudaMemcpyDeviceToHost);
 }
 
-double canny_cuda(string input_file)
+double canny_cuda(string input_file, string output_file)
 {
     cuda_canny_input_file = input_file;
     string output_file_name = filesystem::path(input_file).filename();
-    cuda_canny_output_file = "/home/atharv/Downloads/Images/Output/Canny_CUDA_" + output_file_name;
+    cuda_canny_output_file = output_file + "/Canny_CUDA_" + output_file_name;
 
     cuda_canny_input_image = cv::imread(cuda_canny_input_file, cv::IMREAD_GRAYSCALE);
     cuda_canny_output_image = cuda_canny_input_image.clone();

@@ -14,5 +14,5 @@ using namespace std;
     #define NOMINMAX
 #endif
 
-double sobel_cv(string input_file);
+double sobel_cv(string input_file, string output_file);
 void sobel_cv_cleanup(void);

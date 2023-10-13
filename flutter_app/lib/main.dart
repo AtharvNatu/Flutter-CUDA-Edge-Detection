@@ -1,4 +1,3 @@
-import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:window_manager/window_manager.dart";
 import "dart:ffi";
@@ -76,6 +75,7 @@ class MyApp extends StatelessWidget {
             ],
           ),
           body: const HomeScreen(),
+          // body: const ResultsScreen(),
         ));
   }
 }

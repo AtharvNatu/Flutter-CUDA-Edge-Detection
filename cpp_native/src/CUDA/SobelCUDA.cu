@@ -161,11 +161,11 @@ void run_sobel_operator(cv::Mat *input_image, cv::Mat *output_image)
     cuda_sobel_mem_copy(output_image->data, device_output, image_size, cudaMemcpyDeviceToHost);
 }
 
-double sobel_cuda(string input_file)
+double sobel_cuda(string input_file, string output_file)
 {
     cuda_sobel_input_file = input_file;
     string output_file_name = filesystem::path(input_file).filename();
-    cuda_sobel_output_file = "/home/atharv/Downloads/Images/Output/Sobel_CUDA_" + output_file_name;
+    cuda_sobel_output_file = output_file + "/Sobel_CUDA_" + output_file_name;
 
     cuda_sobel_input_image = cv::imread(cuda_sobel_input_file, cv::IMREAD_GRAYSCALE);
     cuda_sobel_output_image = cuda_sobel_input_image.clone();

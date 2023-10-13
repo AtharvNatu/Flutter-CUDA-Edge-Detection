@@ -4,13 +4,13 @@ cv::Mat input_img, blur_image, sobel_image;
 cv::String sobel_cv_input_file, sobel_cv_output_file;
 StopWatchInterface *sobel_cv_timer = nullptr;
 
-double sobel_cv(string input_file)
+double sobel_cv(string input_file, string output_file)
 {
     sdkCreateTimer(&sobel_cv_timer);
 
     sobel_cv_input_file = input_file;
     string output_file_name = filesystem::path(input_file).filename();
-    sobel_cv_output_file = "/home/atharv/Downloads/Images/Output/Sobel_OpenCV_" + output_file_name;
+    sobel_cv_output_file = output_file + "/Sobel_OpenCV_" + output_file_name;
     
     input_img = cv::imread(sobel_cv_input_file, cv::IMREAD_GRAYSCALE);
 
