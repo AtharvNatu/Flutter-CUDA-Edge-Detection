@@ -178,7 +178,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
         touchTooltipData: BarTouchTooltipData(
           tooltipBgColor: Colors.blueGrey,
           tooltipHorizontalAlignment: FLHorizontalAlignment.right,
-          // tooltipMargin: -10,
+          tooltipMargin: -10,
           getTooltipItem: (group, groupIndex, rod, rodIndex) {
             String text;
             switch (group.x) {
@@ -208,7 +208,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
                 TextSpan(
                   text: (rod.toY).toString(),
                   style: const TextStyle(
-                    color: AppColors.contentColorBlue,
+                    color: AppColors.contentColorWhite,
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
                   ),
