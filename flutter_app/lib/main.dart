@@ -61,21 +61,19 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
         title: appName,
         home: Scaffold(
-          appBar: AppBar(
-            backgroundColor: const Color.fromARGB(255, 118, 185, 0),
-            title: const Text(appName),
-            actions: <Widget>[
-              TextButton(
-                style: style,
-                onPressed: () {
-                  exit(0);
-                },
-                child: const Text("Exit"),
-              ),
-            ],
-          ),
-          body: const HomeScreen(),
-          // body: const ResultsScreen(),
-        ));
+            appBar: AppBar(
+              backgroundColor: const Color.fromARGB(255, 118, 185, 0),
+              title: const Text(appName),
+              actions: <Widget>[
+                TextButton(
+                  style: style,
+                  onPressed: () {
+                    exit(0);
+                  },
+                  child: const Text("Exit"),
+                ),
+              ],
+            ),
+            body: const HomeScreen()));
   }
 }
