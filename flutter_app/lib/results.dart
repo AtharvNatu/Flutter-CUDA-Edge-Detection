@@ -6,7 +6,7 @@ import "colors.dart";
 
 late String imageName, sobelCVPath, sobelCUDAPath, cannyCVPath, cannyCUDAPath;
 late double maxTime;
-String? selectedFileName;
+late String selectedFileName;
 String? dirPath;
 Directory? rootPath = Directory("/home/atharv/Downloads/");
 
@@ -99,14 +99,14 @@ class _ResultsScreenState extends State<ResultsScreen> {
       fontSize: 15,
     );
     String text;
-    if (value.toInt() % 5 == 0) {
+    if (value.toInt() % 10 == 0) {
       text = value.toInt().toString();
     } else {
       text = "";
     }
     return SideTitleWidget(
       axisSide: meta.axisSide,
-      space: 5,
+      space: 10,
       child: Text(text, style: style, textAlign: TextAlign.left),
     );
   }
@@ -239,7 +239,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
     );
     return MaterialApp(
       home: DefaultTabController(
-        length: 5,
+        length: 6,
         child: Scaffold(
           appBar: AppBar(
             title: const Text("Results"),
@@ -258,6 +258,9 @@ class _ResultsScreenState extends State<ResultsScreen> {
             ],
             bottom: const TabBar(
               tabs: [
+                Tab(
+                  text: "Original Image",
+                ),
                 Tab(
                   text: "Sobel OpenCV",
                 ),
@@ -278,6 +281,11 @@ class _ResultsScreenState extends State<ResultsScreen> {
           ),
           body: TabBarView(
             children: [
+              Image(
+                  image: Image.file(File(selectedFileName)).image,
+                  height: 150,
+                  width: 150,
+                  fit: BoxFit.fitHeight),
               Image(
                   image: Image.file(File(sobelCVPath)).image,
                   height: 150,
