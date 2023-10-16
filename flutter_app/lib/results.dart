@@ -106,7 +106,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
     }
     return SideTitleWidget(
       axisSide: meta.axisSide,
-      space: 10,
+      space: 5,
       child: Text(text, style: style, textAlign: TextAlign.left),
     );
   }
