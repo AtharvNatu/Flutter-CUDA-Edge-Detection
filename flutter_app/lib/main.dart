@@ -1,4 +1,5 @@
 import "package:flutter/material.dart";
+import "package:flutter_app/results.dart";
 import "package:window_manager/window_manager.dart";
 import "dart:ffi";
 import "package:path/path.dart" as path;
@@ -29,9 +30,11 @@ void main() async {
     // Default Linux
     var libraryPath =
         path.join(Directory.current.path, "ffi_lib", "libEdgeDetection.so");
+    rootPath = Directory("/");
     if (Platform.isWindows) {
       libraryPath =
           path.join(Directory.current.path, "ffi_lib", "EdgeDetection.dll");
+      rootPath = Directory("//");
     }
 
     dynamicLib = DynamicLibrary.open(libraryPath);

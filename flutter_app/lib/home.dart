@@ -28,10 +28,10 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   // Code
   Future<void> selectDirectory(BuildContext context) async {
-    String? path = await FilesystemPicker.open(
+    String? path = await FilesystemPicker.openDialog(
       title: "Select Output Folder",
       context: context,
-      rootDirectory: rootPath!,
+      rootDirectory: rootPath,
       fsType: FilesystemType.folder,
       pickText: "Select Current Folder",
       folderIconColor: Colors.teal,
@@ -52,16 +52,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> selectImage(BuildContext context) async {
-    String? path = await FilesystemPicker.open(
+    String? path = await FilesystemPicker.openDialog(
         title: "Select Input Image",
         context: context,
-        rootDirectory: rootPath!,
+        rootDirectory: rootPath,
         fsType: FilesystemType.file,
-        allowedExtensions: ['.jpg', '.png', '.bmp', '.jpeg'],
+        allowedExtensions: ['.jpg', '.png', '.bmp', '.jpeg', '.tif'],
         pickText: "Select Current Image",
         folderIconColor: Colors.teal,
         fileTileSelectMode: FileTileSelectMode.wholeTile);
-
     if (path != null) {
       setState(() {
         selectedFileName = path;
@@ -83,6 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
                 fixedSize: const ui.Size(220, 60),
+                backgroundColor: Colors.teal,
                 textStyle: const TextStyle(
                     fontFamily: "Cascadia Code",
                     fontSize: 16,
@@ -128,11 +128,11 @@ class _LoadingScreenState extends State<LoadingScreen> {
 
   // Code
   void runEdgeDetection() {
-    final imageFile = selectedFileName?.toNativeUtf8();
+    final imageFile = selectedFileName.toNativeUtf8();
     final outputPath = dirPath.toString().toNativeUtf8();
 
     sobelCVTime =
-        double.parse(sobelCV(imageFile!, outputPath).toStringAsFixed(2));
+        double.parse(sobelCV(imageFile, outputPath).toStringAsFixed(2));
     sobelCUDATime =
         double.parse(sobelCUDA(imageFile, outputPath).toStringAsFixed(2));
     cannyCVTime =

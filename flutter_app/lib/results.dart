@@ -8,7 +8,8 @@ late String imageName, sobelCVPath, sobelCUDAPath, cannyCVPath, cannyCUDAPath;
 late double maxTime;
 late String selectedFileName;
 String? dirPath;
-Directory? rootPath = Directory("/home/atharv/Downloads/");
+// Directory? rootPath = Directory("/home/atharv/Downloads/");
+late Directory rootPath;
 
 // Execution Time
 late double sobelCVTime, sobelCUDATime, cannyCVTime, cannyCUDATime;
