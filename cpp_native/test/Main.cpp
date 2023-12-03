@@ -14,13 +14,13 @@ int main(int argc, char* argv[])
         exit(EXIT_FAILURE);
     }
     
-    sobel_cv(string(argv[1]));
+    cout << "Sobel OpenCV : " << sobel_cv(string(argv[1]), string(argv[2])) << endl;
 
-    sobel_cuda(string(argv[1]));
+    cout << "Sobel CUDA : " << sobel_cuda(string(argv[1]), string(argv[2])) << endl;
 
-    canny_cv(string(argv[1]));
+    cout << "Canny OpenCV : " << canny_cv(string(argv[1]), string(argv[2])) << endl;
 
-    canny_cuda(string(argv[1]));
+    cout << "Canny CUDA : " << canny_cuda(string(argv[1]), string(argv[2])) << endl;
 
     exit(EXIT_SUCCESS);
 }

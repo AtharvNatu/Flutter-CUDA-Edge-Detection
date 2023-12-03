@@ -2,3 +2,6 @@
 *.jpg
 *.png
 *.bmp
+*.exe
+*.so
+*.dll

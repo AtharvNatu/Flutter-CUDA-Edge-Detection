@@ -1,47 +1,45 @@
 #include "../../include/CUDA/CannyCUDA.cuh"
 
-cv::Mat cuda_canny_input_image, cuda_canny_output_image;
-cv::String cuda_canny_input_file, cuda_canny_output_file;
-
-StopWatchInterface *canny_cuda_timer = nullptr;
-
-cudaStream_t stream;
-uint8_t *input_pixels = nullptr, *output_pixels = nullptr, *segment_pixels = nullptr, *final_result = nullptr;
+// Global Variables
+uchar_t *input_pixels = nullptr, *output_pixels = nullptr, *segment_pixels = nullptr, *final_result = nullptr;
 double *gradient_pixels = nullptr, *max_pixels = nullptr, *gaussian_kernel_gpu = nullptr;
-int8_t* sobel_kernel_x_gpu = nullptr, *sobel_kernel_y_gpu = nullptr;
+schar_t* sobel_kernel_x_gpu = nullptr, *sobel_kernel_y_gpu = nullptr;
 
-__global__ void gaussianBlur(const uint8_t* input_data, uint8_t* output_data, int image_width, int image_height, double* gaussian_kernel)
+// CUDA Kernels
+__global__ void gaussianBlur(const uchar_t* input_data, uchar_t* output_data, int image_width, int image_height, double* gaussian_kernel)
 {
+    // Code
 	int id = blockIdx.x * blockDim.x + threadIdx.x;
 
-	const int offset_xy = ((KERNEL_SIZE - 1) / 2);
+	const int offset_xy = ((CV_GAUSSIAN_KERNEL_SIZE - 1) / 2);
 
 	if ((id >= 0 && id < image_height * image_width))
     {
         double kernelSum = 0;
         double blurPixel = 0;
 
-        for (int i = 0; i < KERNEL_SIZE; i++) 
+        for (int i = 0; i < CV_GAUSSIAN_KERNEL_SIZE; i++) 
         {
-            for (int j = 0; j < KERNEL_SIZE; j++) 
+            for (int j = 0; j < CV_GAUSSIAN_KERNEL_SIZE; j++) 
             {
                 if (((id + ((i - offset_xy) * image_width) + j - offset_xy) >= 0) && 
                     ((id + ((i - offset_xy) * image_width) + j - offset_xy) <= image_height * image_width - 1) && 
                     (((id % image_width) + j - offset_xy) >= 0) && 
                     (((id % image_width) + j - offset_xy) <= (image_width - 1))) 
                     {
-                        blurPixel = blurPixel + gaussian_kernel[i * KERNEL_SIZE + j] * input_data[id + ((i - offset_xy) * image_width) + j - offset_xy];
-                        kernelSum = kernelSum + gaussian_kernel[i * KERNEL_SIZE + j];
+                        blurPixel = blurPixel + gaussian_kernel[i * CV_GAUSSIAN_KERNEL_SIZE + j] * input_data[id + ((i - offset_xy) * image_width) + j - offset_xy];
+                        kernelSum = kernelSum + gaussian_kernel[i * CV_GAUSSIAN_KERNEL_SIZE + j];
                     }
             }
         }
         
-        output_data[id] = (uint8_t)(blurPixel / kernelSum);
+        output_data[id] = (uchar_t)(blurPixel / kernelSum);
     }
 }
 
-__global__ void sobelFilter(double* gradient_pixels, uint8_t* segment_pixels, const uint8_t* input_data, int image_width, int image_height, int8_t* sobel_kernel_x, int8_t* sobel_kernel_y ) 
+__global__ void sobelFilter(double* gradient_pixels, uchar_t* segment_pixels, const uchar_t* input_data, int image_width, int image_height, schar_t* sobel_kernel_x, schar_t* sobel_kernel_y ) 
 {
+    // Code
 	int id = blockIdx.x * blockDim.x + threadIdx.x;
 
 	if ((id >= 0 && id < image_height * image_width))
@@ -88,12 +86,13 @@ __global__ void sobelFilter(double* gradient_pixels, uint8_t* segment_pixels, co
                 segment = 4;
         }
 
-        segment_pixels[src_id] = (uint8_t)segment;
+        segment_pixels[src_id] = (uchar_t)segment;
     }
 }
 
-__global__ void nonMaxSuppression(double* max_pixels, double* gradient_pixels, uint8_t* segment_pixels, int image_width, int image_height) 
+__global__ void nonMaxSuppression(double* max_pixels, double* gradient_pixels, uchar_t* segment_pixels, int image_width, int image_height) 
 {
+    // Code
 	int id = blockIdx.x * blockDim.x + threadIdx.x;
 
 	if ((id >= 0 && id < image_height * image_width))
@@ -127,8 +126,9 @@ __global__ void nonMaxSuppression(double* max_pixels, double* gradient_pixels, u
     }
 }
 
-__global__ void doubleThreshold(uint8_t* out, double* max_pixels, int strong_threshold, int weak_threshold, int image_width, int image_height) 
+__global__ void doubleThreshold(uchar_t* out, double* max_pixels, int strong_threshold, int weak_threshold, int image_width, int image_height) 
 {
+    // Code
 	int id = blockIdx.x * blockDim.x + threadIdx.x;
 
 	if ((id >= 0 && id < image_height * image_width))
@@ -142,8 +142,9 @@ __global__ void doubleThreshold(uint8_t* out, double* max_pixels, int strong_thr
     }
 }
 
-__global__ void edgeHysteresis(uint8_t* out, uint8_t* in, int image_width, int image_height) 
+__global__ void edgeHysteresis(uchar_t* out, uchar_t* in, int image_width, int image_height) 
 {
+    // Code
 	int id = blockIdx.x * blockDim.x + threadIdx.x;
 
 	if ((id >= 0 && id < image_height * image_width))
@@ -166,6 +167,7 @@ __global__ void edgeHysteresis(uint8_t* out, uint8_t* in, int image_width, int i
 
 void cuda_canny_mem_alloc(void** dev_ptr, size_t size)
 {
+    // Code
     cudaError_t result = cudaMalloc(dev_ptr, size);
     if (result != cudaSuccess)
     {
@@ -177,6 +179,7 @@ void cuda_canny_mem_alloc(void** dev_ptr, size_t size)
 
 void cuda_canny_mem_copy(void *dst, const void *src, size_t count, cudaMemcpyKind kind)
 {
+    // Code 
     cudaError_t result = cudaMemcpy(dst, src, count, kind);
     if (result != cudaSuccess)
     {
@@ -186,18 +189,21 @@ void cuda_canny_mem_copy(void *dst, const void *src, size_t count, cudaMemcpyKin
     }
 }
 
-void cuda_canny_mem_free(void* dev_ptr)
+void cuda_canny_mem_free(void** dev_ptr)
 {
-    if (dev_ptr)
+    // Code
+    if (*dev_ptr)
     {
-        cudaFree(dev_ptr);
-        dev_ptr = nullptr;
+        cudaFree(*dev_ptr);
+        *dev_ptr = nullptr;
     }
 }
 
-void run_canny_operator(uint8_t *input_image_data, uint8_t *output_image_data, int image_width, int image_height)
+double canny_operator(uchar_t *input_image_data, uchar_t *output_image_data, int image_width, int image_height)
 {
     // Variable Declarations
+    StopWatchInterface *canny_cuda_timer = nullptr;
+
 	const double gaussian_kernel[9] = 
     {
 		1, 2, 1,
@@ -205,14 +211,14 @@ void run_canny_operator(uint8_t *input_image_data, uint8_t *output_image_data, i
 		1, 2, 1
 	};
 
-	const int8_t sobel_kernel_x[] = 
+	const schar_t sobel_kernel_x[] = 
     {   
         -1, 0, 1,
 		-2, 0, 2,
 		-1, 0, 1 
     };
 
-	const int8_t sobel_kernel_y[] = 
+	const schar_t sobel_kernel_y[] = 
     {    
         1, 2, 1,
 		0, 0, 0,
@@ -221,82 +227,87 @@ void run_canny_operator(uint8_t *input_image_data, uint8_t *output_image_data, i
 
 	const int NUM_BLOCKS = (image_height * image_width) / THREADS_PER_BLOCK;
 
-	cuda_canny_mem_alloc((void**)&input_pixels, sizeof(uint8_t) * image_height * image_width);
-	cuda_canny_mem_alloc((void**)&output_pixels, sizeof(uint8_t) * image_height * image_width);
+	cuda_canny_mem_alloc((void**)&input_pixels, sizeof(uchar_t) * image_height * image_width);
+	cuda_canny_mem_alloc((void**)&output_pixels, sizeof(uchar_t) * image_height * image_width);
 	cuda_canny_mem_alloc((void**)&gradient_pixels, sizeof(double) * image_height * image_width);
-	cuda_canny_mem_alloc((void**)&final_result, sizeof(uint8_t) * image_height * image_width);
+	cuda_canny_mem_alloc((void**)&final_result, sizeof(uchar_t) * image_height * image_width);
 	cuda_canny_mem_alloc((void**)&max_pixels, sizeof(double) * image_height * image_width);
-	cuda_canny_mem_alloc((void**)&segment_pixels, sizeof(uint8_t) * image_height * image_width);
-	cuda_canny_mem_alloc((void**)&gaussian_kernel_gpu, sizeof(double) * KERNEL_SIZE * KERNEL_SIZE);
-	cuda_canny_mem_alloc((void**)&sobel_kernel_x_gpu, sizeof(int8_t) * 3 * 3);
-	cuda_canny_mem_alloc((void**)&sobel_kernel_y_gpu, sizeof(int8_t) * 3 * 3);
+	cuda_canny_mem_alloc((void**)&segment_pixels, sizeof(uchar_t) * image_height * image_width);
+	cuda_canny_mem_alloc((void**)&gaussian_kernel_gpu, sizeof(double) * CV_GAUSSIAN_KERNEL_SIZE * CV_GAUSSIAN_KERNEL_SIZE);
+	cuda_canny_mem_alloc((void**)&sobel_kernel_x_gpu, sizeof(schar_t) * 3 * 3);
+	cuda_canny_mem_alloc((void**)&sobel_kernel_y_gpu, sizeof(schar_t) * 3 * 3);
 
-	cuda_canny_mem_copy(input_pixels, input_image_data, image_height * image_width * sizeof(uint8_t), cudaMemcpyHostToDevice);
-	cuda_canny_mem_copy(gaussian_kernel_gpu, gaussian_kernel, sizeof(double) * KERNEL_SIZE * KERNEL_SIZE, cudaMemcpyHostToDevice);
-	cuda_canny_mem_copy(sobel_kernel_x_gpu, sobel_kernel_x, sizeof(int8_t) * KERNEL_SIZE * KERNEL_SIZE, cudaMemcpyHostToDevice);
-	cuda_canny_mem_copy(sobel_kernel_y_gpu, sobel_kernel_y, sizeof(int8_t) * KERNEL_SIZE * KERNEL_SIZE, cudaMemcpyHostToDevice);
+	cuda_canny_mem_copy(input_pixels, input_image_data, image_height * image_width * sizeof(uchar_t), cudaMemcpyHostToDevice);
+	cuda_canny_mem_copy(gaussian_kernel_gpu, gaussian_kernel, sizeof(double) * CV_GAUSSIAN_KERNEL_SIZE * CV_GAUSSIAN_KERNEL_SIZE, cudaMemcpyHostToDevice);
+	cuda_canny_mem_copy(sobel_kernel_x_gpu, sobel_kernel_x, sizeof(schar_t) * CV_GAUSSIAN_KERNEL_SIZE * CV_GAUSSIAN_KERNEL_SIZE, cudaMemcpyHostToDevice);
+	cuda_canny_mem_copy(sobel_kernel_y_gpu, sobel_kernel_y, sizeof(schar_t) * CV_GAUSSIAN_KERNEL_SIZE * CV_GAUSSIAN_KERNEL_SIZE, cudaMemcpyHostToDevice);
 
+    // CUDA Kernel Call
     sdkCreateTimer(&canny_cuda_timer);
-	cudaStreamCreate(&stream);
-
     sdkStartTimer(&canny_cuda_timer);
-	gaussianBlur<<<NUM_BLOCKS, THREADS_PER_BLOCK, GRID, stream>>>(input_pixels, output_pixels, image_width, image_height, gaussian_kernel_gpu);
-    sobelFilter<<<NUM_BLOCKS, THREADS_PER_BLOCK, GRID, stream>>>(gradient_pixels, segment_pixels, output_pixels, image_width, image_height, sobel_kernel_x_gpu, sobel_kernel_y_gpu);
-    cuda_canny_mem_copy(max_pixels, gradient_pixels, image_height * image_width * sizeof(double), cudaMemcpyDeviceToDevice);
-	nonMaxSuppression<<<NUM_BLOCKS, THREADS_PER_BLOCK, GRID, stream >>>(max_pixels, gradient_pixels, segment_pixels, image_width, image_height);
-	doubleThreshold<<<NUM_BLOCKS, THREADS_PER_BLOCK, GRID, stream>>>(output_pixels, max_pixels, CUDA_THRESHOLD * 3, CUDA_THRESHOLD, image_width, image_height);
-	cuda_canny_mem_copy(final_result, output_pixels, image_height * image_width * sizeof(uint8_t), cudaMemcpyDeviceToDevice);
-	edgeHysteresis<<<NUM_BLOCKS, THREADS_PER_BLOCK, GRID, stream>>>(final_result, output_pixels, image_width, image_height);
+    {
+        gaussianBlur<<<NUM_BLOCKS, THREADS_PER_BLOCK>>>(input_pixels, output_pixels, image_width, image_height, gaussian_kernel_gpu);
+        sobelFilter<<<NUM_BLOCKS, THREADS_PER_BLOCK>>>(gradient_pixels, segment_pixels, output_pixels, image_width, image_height, sobel_kernel_x_gpu, sobel_kernel_y_gpu);
+        
+        cuda_canny_mem_copy(max_pixels, gradient_pixels, image_height * image_width * sizeof(double), cudaMemcpyDeviceToDevice);
+        
+        nonMaxSuppression<<<NUM_BLOCKS, THREADS_PER_BLOCK>>>(max_pixels, gradient_pixels, segment_pixels, image_width, image_height);
+        doubleThreshold<<<NUM_BLOCKS, THREADS_PER_BLOCK>>>(output_pixels, max_pixels, CUDA_THRESHOLD * 3, CUDA_THRESHOLD, image_width, image_height);
+        
+        cuda_canny_mem_copy(final_result, output_pixels, image_height * image_width * sizeof(uchar_t), cudaMemcpyDeviceToDevice);
+        
+        edgeHysteresis<<<NUM_BLOCKS, THREADS_PER_BLOCK>>>(final_result, output_pixels, image_width, image_height);
+    }
     sdkStopTimer(&canny_cuda_timer);
 
-	cuda_canny_mem_copy(output_image_data, final_result, image_width * image_height * sizeof(uint8_t), cudaMemcpyDeviceToHost);
+    // Get Execution Time
+    double canny_time = sdkGetTimerValue(&canny_cuda_timer);
+    sdkDeleteTimer(&canny_cuda_timer);
+    canny_cuda_timer = nullptr;
+
+	cuda_canny_mem_copy(output_image_data, final_result, image_width * image_height * sizeof(uchar_t), cudaMemcpyDeviceToHost);
+
+    return canny_time;
 }
 
 double canny_cuda(string input_file, string output_file)
 {
+    // Variable Declarations
+    cv::Mat cuda_canny_input_image, cuda_canny_output_image;
+    cv::String cuda_canny_input_file, cuda_canny_output_file;
+
+    // Code
     cuda_canny_input_file = input_file;
-    string output_file_name = filesystem::path(input_file).filename();
+    filesystem::path output_path = filesystem::path(input_file).filename();
+    string output_file_name = output_path.string();
     cuda_canny_output_file = output_file + "/Canny_CUDA_" + output_file_name;
 
     cuda_canny_input_image = cv::imread(cuda_canny_input_file, cv::IMREAD_GRAYSCALE);
     cuda_canny_output_image = cuda_canny_input_image.clone();
 
-    run_canny_operator(cuda_canny_input_image.data, cuda_canny_output_image.data, cuda_canny_input_image.cols, cuda_canny_input_image.rows);
-
-    double result = sdkGetTimerValue(&canny_cuda_timer);
+    double result = canny_operator(cuda_canny_input_image.data, cuda_canny_output_image.data, cuda_canny_input_image.cols, cuda_canny_input_image.rows);
 
     cuda_canny_output_image.convertTo(cuda_canny_output_image, CV_8UC1);
 
     cv::imwrite(cuda_canny_output_file, cuda_canny_output_image);
 
     canny_cuda_cleanup();
+    cuda_canny_output_image.release();
+    cuda_canny_input_image.release();
 
     return result;
 }
 
 void canny_cuda_cleanup(void)
 {
-	cuda_canny_mem_free(final_result);
-    cuda_canny_mem_free(sobel_kernel_y_gpu);
-    cuda_canny_mem_free(sobel_kernel_x_gpu);
-    cuda_canny_mem_free(gaussian_kernel_gpu);
-    cuda_canny_mem_free(segment_pixels);
-    cuda_canny_mem_free(max_pixels);
-    cuda_canny_mem_free(gradient_pixels);
-    cuda_canny_mem_free(output_pixels);
-    cuda_canny_mem_free(input_pixels);
-
-    if (stream)
-    {
-        cudaStreamDestroy(stream);
-    }
-
-    if (canny_cuda_timer)
-    {
-        sdkDeleteTimer(&canny_cuda_timer);
-        canny_cuda_timer = nullptr;
-    }
-
-    cuda_canny_output_image.release();
-    cuda_canny_input_image.release();
+    // Code
+	cuda_canny_mem_free((void**)&final_result);
+    cuda_canny_mem_free((void**)&sobel_kernel_y_gpu);
+    cuda_canny_mem_free((void**)&sobel_kernel_x_gpu);
+    cuda_canny_mem_free((void**)&gaussian_kernel_gpu);
+    cuda_canny_mem_free((void**)&segment_pixels);
+    cuda_canny_mem_free((void**)&max_pixels);
+    cuda_canny_mem_free((void**)&gradient_pixels);
+    cuda_canny_mem_free((void**)&output_pixels);
+    cuda_canny_mem_free((void**)&input_pixels);
 }
