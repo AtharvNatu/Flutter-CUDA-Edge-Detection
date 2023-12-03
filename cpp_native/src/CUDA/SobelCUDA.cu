@@ -189,7 +189,12 @@ double sobel_cuda(string input_file, string output_file)
     cuda_sobel_input_file = input_file;
     filesystem::path output_path = filesystem::path(input_file).filename();
     string output_file_name = output_path.string();
-    cuda_sobel_output_file = output_file + "/Sobel_CUDA_" + output_file_name;
+
+    #if (OS == 1)
+        cuda_sobel_output_file = output_file + "\\Sobel_CUDA_" + output_file_name;
+    #elif (OS == 2)
+        cuda_sobel_output_file = output_file + "/Sobel_CUDA_" + output_file_name;
+    #endif
 
     // Reading Input Image
     cuda_sobel_input_image = cv::imread(cuda_sobel_input_file, cv::IMREAD_GRAYSCALE);

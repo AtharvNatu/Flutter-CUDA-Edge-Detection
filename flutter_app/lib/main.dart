@@ -34,7 +34,7 @@ void main() async {
     if (Platform.isWindows) {
       libraryPath =
           path.join(Directory.current.path, "ffi_lib", "EdgeDetection.dll");
-      rootPath = Directory("//");
+      rootPath = Directory("\\");
     }
 
     dynamicLib = DynamicLibrary.open(libraryPath);

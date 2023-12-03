@@ -39,10 +39,17 @@ class _HomeScreenState extends State<HomeScreen> {
     if (path != null) {
       setState(() {
         dirPath = path;
-        sobelCVPath = "$dirPath/Sobel_OpenCV_$imageName";
-        sobelCUDAPath = "$dirPath/Sobel_CUDA_$imageName";
-        cannyCVPath = "$dirPath/Canny_OpenCV_$imageName";
-        cannyCUDAPath = "$dirPath/Canny_CUDA_$imageName";
+        if (Platform.isWindows) {
+          sobelCVPath = "$dirPath\\Sobel_OpenCV_$imageName";
+          sobelCUDAPath = "$dirPath\\Sobel_CUDA_$imageName";
+          cannyCVPath = "$dirPath\\Canny_OpenCV_$imageName";
+          cannyCUDAPath = "$dirPath\\Canny_CUDA_$imageName";
+        } else if (Platform.isLinux) {
+          sobelCVPath = "$dirPath/Sobel_OpenCV_$imageName";
+          sobelCUDAPath = "$dirPath/Sobel_CUDA_$imageName";
+          cannyCVPath = "$dirPath/Canny_OpenCV_$imageName";
+          cannyCUDAPath = "$dirPath/Canny_CUDA_$imageName";
+        }
       });
       Navigator.push(
         context,
@@ -64,7 +71,11 @@ class _HomeScreenState extends State<HomeScreen> {
     if (path != null) {
       setState(() {
         selectedFileName = path;
-        imageName = path.split('/').last;
+        if (Platform.isWindows) {
+          imageName = path.split('\\').last;
+        } else if (Platform.isLinux) {
+          imageName = path.split('/').last;
+        }
       });
 
       selectDirectory(context);

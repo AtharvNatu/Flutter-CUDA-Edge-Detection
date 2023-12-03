@@ -14,6 +14,12 @@
 #define BLOCK_SIZE                  32
 #define CUDA_THRESHOLD              30
 
+#if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
+    #define OS 1
+#else
+    #define OS 2
+#endif
+
 // Typedef
 typedef unsigned char uchar_t;
 typedef signed char schar_t;

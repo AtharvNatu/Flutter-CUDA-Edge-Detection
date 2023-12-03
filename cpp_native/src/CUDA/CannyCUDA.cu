@@ -280,7 +280,12 @@ double canny_cuda(string input_file, string output_file)
     cuda_canny_input_file = input_file;
     filesystem::path output_path = filesystem::path(input_file).filename();
     string output_file_name = output_path.string();
-    cuda_canny_output_file = output_file + "/Canny_CUDA_" + output_file_name;
+
+    #if (OS == 1)
+        cuda_canny_output_file = output_file + "\\Canny_CUDA_" + output_file_name;
+    #elif (OS == 2)
+        cuda_canny_output_file = output_file + "/Canny_CUDA_" + output_file_name;
+    #endif
 
     cuda_canny_input_image = cv::imread(cuda_canny_input_file, cv::IMREAD_GRAYSCALE);
     cuda_canny_output_image = cuda_canny_input_image.clone();
