@@ -151,6 +151,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
     cannyCUDATime =
         double.parse(cannyCUDA(imageFile, outputPath).toStringAsFixed(2));
 
+    calloc.free(outputPath);
     calloc.free(imageFile);
 
     Navigator.push(

@@ -252,7 +252,7 @@ double canny_operator(uchar_t *input_image_data, uchar_t *output_image_data, int
         cuda_canny_mem_copy(max_pixels, gradient_pixels, image_height * image_width * sizeof(double), cudaMemcpyDeviceToDevice);
         
         nonMaxSuppression<<<NUM_BLOCKS, THREADS_PER_BLOCK>>>(max_pixels, gradient_pixels, segment_pixels, image_width, image_height);
-        doubleThreshold<<<NUM_BLOCKS, THREADS_PER_BLOCK>>>(output_pixels, max_pixels, CUDA_THRESHOLD * 3, CUDA_THRESHOLD, image_width, image_height);
+        doubleThreshold<<<NUM_BLOCKS, THREADS_PER_BLOCK>>>(output_pixels, max_pixels, CUDA_THRESHOLD * CUDA_RATIO, CUDA_THRESHOLD, image_width, image_height);
         
         cuda_canny_mem_copy(final_result, output_pixels, image_height * image_width * sizeof(uchar_t), cudaMemcpyDeviceToDevice);
         

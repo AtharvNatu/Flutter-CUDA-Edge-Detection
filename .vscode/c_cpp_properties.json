@@ -1,17 +1,35 @@
 {
     "configurations": [
+        // {
+        //     "name": "Linux",
+        //     "includePath": [
+        //         "${workspaceFolder}/**",
+        //         "/usr/include/opencv4",
+        //         "/opt/cuda/include"
+        //     ],
+        //     "defines": [],
+        //     "compilerPath": "/usr/bin/clang",
+        //     "cStandard": "c17",
+        //     "cppStandard": "c++17",
+        //     "intelliSenseMode": "linux-clang-x64"
+        // },
         {
-            "name": "Linux",
+            "name": "Windows",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/usr/include/opencv4",
-                "/opt/cuda/include"
+                "C:\\opencv\\build\\include",
+                "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v12.2\\include"
             ],
-            "defines": [],
-            "compilerPath": "/usr/bin/clang",
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "windowsSdkVersion": "10.0.22621.0",
+            "compilerPath": "cl.exe",
             "cStandard": "c17",
             "cppStandard": "c++17",
-            "intelliSenseMode": "linux-clang-x64"
+            "intelliSenseMode": "windows-msvc-x64"
         }
     ],
     "version": 4
